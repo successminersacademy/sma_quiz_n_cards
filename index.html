@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Success Miners Physics Flashcards</title>
+  <style>
+    :root {
+      --brown: #8B4513;
+      --gold: #FFD700;
+      --green: #228B22;
+      --dark: #1a120b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      background: #4E342E;
+      color: var(--dark);
+      position: fixed;
+      inset: 0;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+    }
+
+    header {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 13px 10px 9px;
+      background: linear-gradient(145deg, #8B4513, #A0522D);
+      border-bottom: 3px solid var(--gold);
+    }
+    header h1 {
+      color: var(--gold);
+      font-size: 1.32rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      margin-bottom: 2px;
+    }
+    header .sub {
+      color: #FFE4B5;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    .filters {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      padding: 8px 8px 4px;
+    }
+    .filters button {
+      background: var(--brown);
+      color: var(--gold);
+      border: 2px solid var(--gold);
+      padding: 5px 12px;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.2px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .filters button.on {
+      background: var(--green);
+      border-color: #1a6b1a;
+      color: #fff;
+    }
+
+    .progress {
+      flex: 0 0 auto;
+      text-align: center;
+      padding: 2px 12px 6px;
+      color: #D7CCC8;
+      font-size: 0.76rem;
+      font-weight: 500;
+      letter-spacing: 0.15px;
+    }
+    .bar {
+      height: 5px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 3px;
+      max-width: 260px;
+      margin: 4px auto 0;
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%;
+      width: 2%;
+      background: linear-gradient(90deg, var(--gold), var(--green));
+      border-radius: 3px;
+      transition: width 0.25s ease;
+    }
+
+    /* Stage */
+    #stage {
+      flex: 1 1 auto;
+      position: relative;
+      margin: 6px 14px;
+      min-height: 220px;
+      -webkit-perspective: 1100px;
+      perspective: 1100px;
+      overflow: hidden;
+    }
+
+    /* The flipper */
+    #flipper {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      -webkit-transform-style: preserve-3d;
+      transform-style: preserve-3d;
+      transition: -webkit-transform 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #flipper.flipped {
+      -webkit-transform: rotateY(180deg);
+      transform: rotateY(180deg);
+    }
+
+    /* Swipe exit animations */
+    #flipper.swipe-left {
+      -webkit-transform: translateX(-120%) rotate(-14deg);
+      transform: translateX(-120%) rotate(-14deg);
+      opacity: 0;
+      transition: -webkit-transform 0.32s ease, transform 0.32s ease, opacity 0.32s ease;
+    }
+    #flipper.swipe-right {
+      -webkit-transform: translateX(120%) rotate(14deg);
+      transform: translateX(120%) rotate(14deg);
+      opacity: 0;
+      transition: -webkit-transform 0.32s ease, transform 0.32s ease, opacity 0.32s ease;
+    }
+
+    .face {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 14px;
+      border: 3px solid var(--brown);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+
+    .face.front { background: #FFFAF0; }
+    .face.back {
+      background: #F5F0E6;
+      -webkit-transform: rotateY(180deg);
+      transform: rotateY(180deg);
+    }
+
+    .card-head {
+      background: linear-gradient(90deg, #8B4513, #A0522D);
+      color: var(--gold);
+      padding: 10px 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .num {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      background: rgba(0,0,0,0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.88rem;
+    }
+    .meta { text-align: right; }
+    .topic {
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: -0.15px;
+    }
+    .cat {
+      font-size: 0.66rem;
+      font-weight: 500;
+      opacity: 0.9;
+      margin-top: 1px;
+      letter-spacing: 0.15px;
+    }
+
+    .card-body {
+      flex: 1;
+      padding: 15px 14px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .label {
+      font-size: 0.66rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 7px;
+    }
+    .label.q { color: var(--brown); }
+    .label.a { color: var(--green); }
+
+    .q-text {
+      font-size: 1.06rem;
+      font-weight: 650;
+      line-height: 1.42;
+      color: var(--dark);
+      letter-spacing: -0.2px;
+    }
+    .a-text {
+      font-size: 0.98rem;
+      font-weight: 500;
+      line-height: 1.48;
+      background: #fff;
+      padding: 12px 13px;
+      border-radius: 9px;
+      border-left: 4px solid var(--green);
+      color: #222;
+      letter-spacing: -0.1px;
+    }
+
+    .hint {
+      text-align: center;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: #8D6E63;
+      padding: 7px;
+      border-top: 1px dashed #D7CCC8;
+      flex-shrink: 0;
+      letter-spacing: 0.15px;
+    }
+
+    .tip {
+      flex: 0 0 auto;
+      text-align: center;
+      color: #A1887F;
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 2px 0;
+      letter-spacing: 0.1px;
+    }
+
+    .nav {
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      padding: 6px 10px 14px;
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
+    }
+    .nav button {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      background: var(--brown);
+      color: var(--gold);
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-appearance: none;
+      appearance: none;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
+    .nav button:disabled { opacity: 0.35; }
+    .nav .flip {
+      width: auto;
+      padding: 0 18px;
+      border-radius: 23px;
+      background: var(--green);
+      border-color: #1a6b1a;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.88rem;
+      letter-spacing: 0.2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Success Miners Physics</h1>
+      <div class="sub">Measurements & Instruments • Flashcards</div>
+    </header>
+
+    <div class="filters" id="filters">
+      <button class="on" data-f="all">All</button>
+      <button data-f="Concept">Concepts</button>
+      <button data-f="Instrument">Instruments</button>
+      <button data-f="Zero Error">Zero Errors</button>
+      <button data-f="Calculation">Calculations</button>
+      <button data-f="Precision Analysis">Precision</button>
+      <button data-f="Quantities">Quantities</button>
+    </div>
+
+    <div class="progress">
+      <span id="progText">Card 1 of 50</span>
+      <div class="bar"><div class="fill" id="progFill"></div></div>
+    </div>
+
+    <div id="stage">
+      <div id="flipper">
+        <div class="face front" id="frontFace"></div>
+        <div class="face back" id="backFace"></div>
+      </div>
+    </div>
+
+    <div class="tip">Tap card to flip • Swipe or use arrows</div>
+
+    <div class="nav">
+      <button id="prev" aria-label="Previous">◀</button>
+      <button class="flip" id="flipBtn">Flip</button>
+      <button id="next" aria-label="Next">▶</button>
+    </div>
+  </div>
+
+  <script>
+    var data = [
+      {id:1, topic:"Precision and Accuracy", cat:"Concept", q:"What is the physical meaning of accuracy in measurement?", a:"Accuracy refers to how close a measured value is to the true or accepted standard value of the physical quantity."},
+      {id:2, topic:"Precision and Accuracy", cat:"Concept", q:"What is the physical meaning of precision in measurement?", a:"Precision refers to the degree of exactness, refinement, or reproducibility of a measurement, determined by the smallest division of the instrument."},
+      {id:3, topic:"Precision and Accuracy", cat:"Concept", q:"Can a measuring instrument be precise yet inaccurate?", a:"Yes, if it consistently gives the same repeated measurements that are far from the true value due to systematic calibration errors."},
+      {id:4, topic:"Precision and Accuracy", cat:"Concept", q:"What type of error is caused by faulty instrument calibration or zero error?", a:"Systematic error."},
+      {id:5, topic:"Precision and Accuracy", cat:"Concept", q:"What type of error is caused by unpredictable fluctuations or observer reading inconsistencies?", a:"Random error."},
+      {id:6, topic:"Precision and Accuracy", cat:"Concept", q:"How does the number of significant figures relate to the precision of a measuring instrument?", a:"More precise instruments allow measurements to be recorded with more significant figures."},
+      {id:7, topic:"Measuring Instruments", cat:"Concept", q:"What experimental error occurs when viewing a metre rule scale from an angle instead of vertically downwards?", a:"Parallax error."},
+      {id:8, topic:"Measuring Instruments", cat:"Concept", q:"What is the primary function of the vernier scale sliding on the main scale?", a:"To allow fractional reading subdivisions beyond the smallest main scale graduation, thereby increasing measurement precision."},
+      {id:9, topic:"Measuring Instruments", cat:"Instrument", q:"What is the reading accuracy (least count) of a standard metre rule?", a:"1.0 mm or 0.1 cm."},
+      {id:10, topic:"Measuring Instruments", cat:"Instrument", q:"What is the reading accuracy (least count) of Vernier calipers?", a:"0.1 mm or 0.01 cm."},
+      {id:11, topic:"Measuring Instruments", cat:"Instrument", q:"What is the reading accuracy (least count) of a micrometer screw gauge?", a:"0.01 mm or 0.001 cm."},
+      {id:12, topic:"Measuring Instruments", cat:"Instrument", q:"What principle governs the operation of a chemical beam balance used for mass?", a:"The principle of moments (law of the lever)."},
+      {id:13, topic:"Measuring Instruments", cat:"Instrument", q:"What physical law governs the operation of a spring balance used for weight?", a:"Hooke's law."},
+      {id:14, topic:"Measuring Instruments", cat:"Instrument", q:"What specific instrument is ideal for measuring the internal and external diameters of a small test tube?", a:"Vernier calipers."},
+      {id:15, topic:"Measuring Instruments", cat:"Instrument", q:"What instrument is best suited for measuring the diameter of a thin copper wire or page thickness?", a:"Micrometer screw gauge."},
+      {id:16, topic:"Measuring Instruments", cat:"Instrument", q:"Why is a stop watch used instead of a wrist watch for high-precision time intervals in physics experiments?", a:"A stop watch has a higher precision reading accuracy and manual split-timing control."},
+      {id:17, topic:"Measuring Instruments", cat:"Instrument", q:"What mechanical component in a micrometer screw gauge prevents excessive pressure from being applied to the object being measured?", a:"The ratchet."},
+      {id:18, topic:"Zero Errors", cat:"Zero Error", q:"What is a positive zero error in a micrometer screw gauge?", a:"An error where the zero mark of the circular scale lies below the reference baseline when the jaws are fully closed."},
+      {id:19, topic:"Zero Errors", cat:"Zero Error", q:"How do you correct a positive zero error on a measuring instrument?", a:"It is subtracted from the observed apparent reading to get the true reading."},
+      {id:20, topic:"Zero Errors", cat:"Zero Error", q:"What is a negative zero error in a measuring instrument?", a:"An error where the zero mark of the circular or sliding scale lies above or before the reference baseline when closed."},
+      {id:21, topic:"Zero Errors", cat:"Zero Error", q:"How do you correct a negative zero error on a measuring instrument?", a:"It is added to the observed apparent reading to get the true reading."},
+      {id:22, topic:"Zero Errors", cat:"Zero Error", q:"What is the zero error condition if the zero marks of the main scale and vernier scale coincide perfectly when the jaws are closed?", a:"Zero error is nil (no zero error)."},
+      {id:23, topic:"Zero Errors", cat:"Zero Error", q:"What does a positive zero error mean for the true reading?", a:"The true reading is less than the apparent reading."},
+      {id:24, topic:"Zero Errors", cat:"Zero Error", q:"What does a negative zero error mean for the true reading?", a:"The true reading is greater than the apparent reading."},
+      {id:25, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Force?", a:"MLT⁻²"},
+      {id:26, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Density?", a:"ML⁻³"},
+      {id:27, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Power?", a:"ML²T⁻³"},
+      {id:28, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Velocity?", a:"LT⁻¹"},
+      {id:29, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Pressure?", a:"ML⁻¹T⁻²"},
+      {id:30, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Work?", a:"ML²T⁻²"},
+      {id:31, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Acceleration?", a:"LT⁻²"},
+      {id:32, topic:"Dimensions", cat:"Calculation", q:"What is the dimensional formula for Momentum?", a:"MLT⁻¹"},
+      {id:33, topic:"Zero Errors", cat:"Calculation", q:"A micrometer shows an apparent reading of 4.66 mm with a positive zero error of +0.02 mm. What is the true reading?", a:"4.64 mm"},
+      {id:34, topic:"Zero Errors", cat:"Calculation", q:"A vernier caliper shows an apparent reading of 2.45 cm with a negative zero error of −0.03 cm. What is the true reading?", a:"2.48 cm"},
+      {id:35, topic:"Instrument Comparison", cat:"Precision Analysis", q:"Among a metre rule, Vernier calipers, and a micrometer screw gauge, which instrument is the most precise?", a:"The micrometer screw gauge, because its smallest reading division is the smallest among the three."},
+      {id:36, topic:"Instrument Comparison", cat:"Precision Analysis", q:"Which set of instruments is ranked correctly from lowest precision to highest precision: Metre rule, Micrometer, Vernier calipers?", a:"Incorrect ranking. Correct order: Metre rule, Vernier calipers, Micrometer screw gauge."},
+      {id:37, topic:"Precision and Accuracy", cat:"Precision Analysis", q:"If instrument A has an accuracy of 0.1 cm and instrument B has 0.001 cm, which is more precise?", a:"Instrument B, because a smaller measurement unit indicates higher precision."},
+      {id:38, topic:"Precision and Accuracy", cat:"Precision Analysis", q:"Between a bathroom scale reading whole kilograms and a laboratory balance reading milligrams, which instrument provides greater precision?", a:"The laboratory balance, because its smallest graduation is much smaller."},
+      {id:39, topic:"Instrument Comparison", cat:"Precision Analysis", q:"Why is the micrometer screw gauge more precise than Vernier calipers?", a:"Because the smallest division on a micrometer (0.01 mm) is smaller than that on Vernier calipers (0.1 mm)."},
+      {id:40, topic:"Instrument Comparison", cat:"Precision Analysis", q:"Why is a metre rule less precise than Vernier calipers?", a:"Because the smallest division on a metre rule (1 mm) is larger than that on Vernier calipers (0.1 mm)."},
+      {id:41, topic:"Fundamental Quantities", cat:"Quantities", q:"What are fundamental quantities?", a:"Physical quantities that are independent of other quantities and cannot be expressed in terms of other physical quantities."},
+      {id:42, topic:"Fundamental Quantities", cat:"Quantities", q:"Name the three basic fundamental quantities used in mechanics.", a:"Mass, Length and Time."},
+      {id:43, topic:"Fundamental Quantities", cat:"Quantities", q:"How many fundamental quantities are there in the SI system?", a:"Seven."},
+      {id:44, topic:"Fundamental Quantities", cat:"Quantities", q:"List the seven fundamental quantities in the SI system.", a:"Mass, Length, Time, Electric current, Temperature, Amount of substance, and Luminous intensity."},
+      {id:45, topic:"Fundamental Quantities", cat:"Quantities", q:"What is the SI unit of mass?", a:"Kilogram (kg)."},
+      {id:46, topic:"Derived Quantities", cat:"Quantities", q:"What are derived quantities?", a:"Physical quantities that are obtained from the combination of two or more fundamental quantities."},
+      {id:47, topic:"Derived Quantities", cat:"Quantities", q:"Is force a fundamental or derived quantity?", a:"Derived quantity."},
+      {id:48, topic:"Derived Quantities", cat:"Quantities", q:"Is density a fundamental or derived quantity?", a:"Derived quantity."},
+      {id:49, topic:"Derived Quantities", cat:"Quantities", q:"What is the SI unit of force?", a:"Newton (N)."},
+      {id:50, topic:"Derived Quantities", cat:"Quantities", q:"What is the SI unit of power?", a:"Watt (W)."}
+    ];
+
+    // Shuffle
+    for (var i = data.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = data[i]; data[i] = data[j]; data[j] = tmp;
+    }
+
+    var list = data.slice();
+    var idx = 0;
+    var isFlipped = false;
+    var busy = false;
+
+    var flipper = document.getElementById('flipper');
+    var frontFace = document.getElementById('frontFace');
+    var backFace = document.getElementById('backFace');
+    var progText = document.getElementById('progText');
+    var progFill = document.getElementById('progFill');
+    var prevBtn = document.getElementById('prev');
+    var nextBtn = document.getElementById('next');
+    var flipBtn = document.getElementById('flipBtn');
+
+    function buildFace(c, isAnswer) {
+      return (
+        '<div class="card-head">' +
+          '<div class="num">' + c.id + '</div>' +
+          '<div class="meta"><div class="topic">' + c.topic + '</div><div class="cat">' + c.cat + '</div></div>' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<div class="label ' + (isAnswer ? 'a' : 'q') + '">' + (isAnswer ? 'Answer' : 'Question') + '</div>' +
+          '<div class="' + (isAnswer ? 'a-text' : 'q-text') + '">' + (isAnswer ? c.a : c.q) + '</div>' +
+        '</div>' +
+        '<div class="hint">Tap to flip → ' + (isAnswer ? 'Question' : 'Answer') + '</div>'
+      );
+    }
+
+    function show() {
+      if (list.length === 0) {
+        frontFace.innerHTML = '<div style="padding:40px;text-align:center;color:#888">No cards</div>';
+        backFace.innerHTML = '';
+        progText.textContent = '0 of 0';
+        progFill.style.width = '0%';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      var c = list[idx];
+      isFlipped = false;
+      flipper.classList.remove('flipped', 'swipe-left', 'swipe-right');
+
+      frontFace.innerHTML = buildFace(c, false);
+      backFace.innerHTML = buildFace(c, true);
+
+      progText.textContent = 'Card ' + (idx + 1) + ' of ' + list.length;
+      progFill.style.width = ((idx + 1) / list.length * 100) + '%';
+      prevBtn.disabled = idx <= 0;
+      nextBtn.disabled = idx >= list.length - 1;
+    }
+
+    function flip() {
+      if (list.length === 0 || busy) return;
+      isFlipped = !isFlipped;
+      if (isFlipped) flipper.classList.add('flipped');
+      else flipper.classList.remove('flipped');
+    }
+
+    function go(n, direction) {
+      if (busy || n < 0 || n >= list.length) return;
+      busy = true;
+
+      // Realistic swipe exit
+      flipper.classList.remove('flipped');
+      flipper.classList.add(direction === 'next' ? 'swipe-left' : 'swipe-right');
+
+      setTimeout(function() {
+        idx = n;
+        show();
+        busy = false;
+      }, 300);
+    }
+
+    // Tap to flip
+    document.getElementById('stage').addEventListener('click', function() {
+      if (!busy) flip();
+    });
+
+    flipBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      flip();
+    });
+    prevBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      go(idx - 1, 'prev');
+    });
+    nextBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      go(idx + 1, 'next');
+    });
+
+    // Swipe gesture
+    var sx = 0, sy = 0, tracking = false;
+    document.getElementById('stage').addEventListener('touchstart', function(e) {
+      sx = e.touches[0].clientX;
+      sy = e.touches[0].clientY;
+      tracking = true;
+    }, {passive: true});
+
+    document.getElementById('stage').addEventListener('touchend', function(e) {
+      if (!tracking || busy) return;
+      tracking = false;
+      var dx = e.changedTouches[0].clientX - sx;
+      var dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) go(idx + 1, 'next');
+        else go(idx - 1, 'prev');
+      }
+    }, {passive: true});
+
+    // Filters
+    document.getElementById('filters').addEventListener('click', function(e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      var f = btn.getAttribute('data-f');
+      var btns = document.querySelectorAll('.filters button');
+      for (var i = 0; i < btns.length; i++) btns[i].classList.remove('on');
+      btn.classList.add('on');
+      if (f === 'all') list = data.slice();
+      else list = data.filter(function(c) { return c.cat === f; });
+      idx = 0;
+      show();
+    });
+
+    show();
+  </script>
+</body>
+</html>
